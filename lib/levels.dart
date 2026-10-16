@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import 'glob/game_catalog.dart';
@@ -6,6 +8,10 @@ import 'glob/user.dart';
 import 'glob/class_data.dart';
 import 'glob/audio.dart';
 import 'student_ui.dart';
+import 'student_story_frame.dart';
+import 'game2.dart';
+import 'game4.dart';
+import 'game6.dart';
 
 class LevelsPage extends StatefulWidget {
   const LevelsPage({super.key});
@@ -18,6 +24,8 @@ class LevelsPageState extends State<LevelsPage> {
   int game = 0;
   bool showGuidelines = false;
   bool showLevels = false;
+  int? pendingStoryLevel;
+  int pendingStoryPage = 0;
   final pageController = ScrollController();
   final guidelinesController = ScrollController();
 
@@ -146,6 +154,12 @@ class LevelsPageState extends State<LevelsPage> {
 
   Widget levelGrid() {
     List<dynamic> levels = GameCatalog.games[game]['levels'];
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final crossAxisCount = screenWidth >= 950
+        ? 3
+        : screenWidth <= 640
+        ? 1
+        : 2;
     List<Widget> cards = [];
     for (int i = 0; i < levels.length; i++) {
       final number = i + 1;
@@ -226,7 +240,7 @@ class LevelsPageState extends State<LevelsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(children: stars),
               ],
             ),
@@ -255,8 +269,8 @@ class LevelsPageState extends State<LevelsPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(0, 0, 6, 8),
-            crossAxisCount: MediaQuery.of(context).size.width >= 950 ? 3 : 2,
-            childAspectRatio: 1.02,
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: screenWidth <= 640 ? 1.7 : 1.02,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: cards,
@@ -285,6 +299,7 @@ class LevelsPageState extends State<LevelsPage> {
     Map<String, dynamic> metadata = GameCatalog.games[game];
     List<dynamic> levels = metadata['levels'];
     Map<String, dynamic> record = GameData.level(game, selectedLevel);
+    bool locked = record['status'] == 'Locked';
     List<Widget> guidelines = [];
     List<dynamic> items = metadata['guidelines'];
     List<String> icons = [
@@ -452,14 +467,166 @@ class LevelsPageState extends State<LevelsPage> {
           detailRow('Attempts', '${record['attempts']}'),
           detailRow('Best Stars', '${record['bestStars']}'),
           const SizedBox(height: 18),
-          studentButton('START LEVEL', null, const Color(0xFF172134)),
+          studentButton(
+            'START LEVEL',
+            !locked && metadata['gameType'] == 'GAME_TWO'
+                ? () async {
+                    AppAudio.click();
+                    if (selectedLevel == 1) {
+                      _openStory();
+                    } else {
+                      await _launchSelectedLevel();
+                    }
+                    if (!mounted) return;
+                    setState(() {});
+                  }
+                : !locked && metadata['gameType'] == 'GAME_FOUR'
+                ? () async {
+                    AppAudio.click();
+                    final firstPlay =
+                        selectedLevel == 1 &&
+                        (record['attempts'] as int? ?? 0) == 0;
+                    if (selectedLevel == 1) {
+                      _openStory();
+                    } else {
+                      await _launchSelectedLevel(game4FirstPlay: firstPlay);
+                    }
+                    if (!mounted) return;
+                    setState(() {});
+                  }
+                : !locked && metadata['gameType'] == 'GAME_SIX'
+                ? () async {
+                    AppAudio.click();
+                    await _launchSelectedLevel();
+                    if (!mounted) return;
+                    setState(() {});
+                  }
+                : null,
+            const Color(0xFF172134),
+          ),
           const SizedBox(height: 12),
-          const Text(
-            'Gameplay is not available yet.',
+          Text(
+            metadata['gameType'] == 'GAME_TWO'
+                ? 'Game 2 — Code Slice is ready to play.'
+                : metadata['gameType'] == 'GAME_FOUR'
+                ? 'Game 4 — Catch The Code is ready to play.'
+                : metadata['gameType'] == 'GAME_SIX'
+                ? 'Game 6 — Syntax Rain Typing is ready to play.'
+                : 'Gameplay is not available yet.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Color(0xFF654E50)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openStory() {
+    setState(() {
+      pendingStoryLevel = selectedLevel;
+      pendingStoryPage = 0;
+    });
+  }
+
+  Future<void> _launchSelectedLevel({bool? game4FirstPlay}) async {
+    final level = pendingStoryLevel ?? selectedLevel;
+    final gameType = GameCatalog.games[game]['gameType'];
+    setState(() {
+      pendingStoryLevel = null;
+      pendingStoryPage = 0;
+    });
+    if (gameType == 'GAME_TWO') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => Game2Page(selectedLevel: level)),
+      );
+      return;
+    }
+    if (gameType == 'GAME_SIX') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => Game6Page(selectedLevel: level)),
+      );
+      return;
+    }
+    final firstPlay = game4FirstPlay ?? false;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Game4Page(
+          selectedLevel: level,
+          suppressIntroTutorial: level == 1,
+          continueToTutorialAfterGuide: firstPlay,
+          startWithGuide: level == 1 && firstPlay,
+        ),
+      ),
+    );
+  }
+
+  Widget _storyOverlay() {
+    final gameType = GameCatalog.games[game]['gameType'];
+    final world = gameType == 'GAME_TWO' ? 'game2' : 'game4';
+    return Positioned.fill(
+      child: Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xD691D7FF),
+                        Color(0xD6FFE7A9),
+                        Color(0xD6FFC3D8),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: SafeArea(
+                child: StudentStoryFrame(
+                  imagePath: 'assets/$world/story/${pendingStoryPage + 1}.png',
+                  worldTitle: gameType == 'GAME_TWO'
+                      ? 'THE ASSEMBLY FORTRESS'
+                      : 'CODE CATCHER',
+                  page: pendingStoryPage,
+                  totalPages: 8,
+                  onBack: () {
+                    if (pendingStoryPage == 0) {
+                      setState(() => pendingStoryLevel = null);
+                    } else {
+                      setState(() => pendingStoryPage--);
+                    }
+                  },
+                  onNext: () => setState(() => pendingStoryPage++),
+                  onSkip: () => _launchSelectedLevel(
+                    game4FirstPlay:
+                        gameType == 'GAME_FOUR' &&
+                        (GameData.level(game, selectedLevel)['attempts']
+                                    as int? ??
+                                0) ==
+                            0,
+                  ),
+                  onPrimary: () => _launchSelectedLevel(
+                    game4FirstPlay:
+                        gameType == 'GAME_FOUR' &&
+                        (GameData.level(game, selectedLevel)['attempts']
+                                    as int? ??
+                                0) ==
+                            0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -470,96 +637,104 @@ class LevelsPageState extends State<LevelsPage> {
     Map<String, int> progress = GameData.summary(game);
     bool wide = MediaQuery.of(context).size.width >= 950;
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: studentBackground(),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            controller: pageController,
-            padding: const EdgeInsets.fromLTRB(16, 8, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                studentButton('BACK TO MENU', () {
-                  AppAudio.click();
-                  Navigator.popUntil(context, ModalRoute.withName('/home'));
-                }, const Color(0xFF172134)),
-                const SizedBox(height: 16),
-                studentButton('BACK TO GAMES', () {
-                  AppAudio.click();
-                  Navigator.pop(context);
-                }, const Color(0xFF172134)),
-                const SizedBox(height: 16),
-                if (showLevels) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: studentPanel(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          metadata['label'].toString().toUpperCase(),
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 12,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          metadata['title'],
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: studentBackground(),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                controller: pageController,
+                padding: const EdgeInsets.fromLTRB(16, 8, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    studentButton('BACK TO MENU', () {
+                      AppAudio.click();
+                      Navigator.popUntil(context, ModalRoute.withName('/home'));
+                    }, const Color(0xFF172134)),
+                    const SizedBox(height: 16),
+                    studentButton('BACK TO GAMES', () {
+                      AppAudio.click();
+                      Navigator.pop(context);
+                    }, const Color(0xFF172134)),
+                    const SizedBox(height: 16),
+                    if (showLevels) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: studentPanel(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: statistic(
-                                '${progress['percent']}%',
-                                'progress',
+                            Text(
+                              metadata['label'].toString().toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 12,
+                                letterSpacing: 2,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: statistic(
-                                '${progress['completed']}',
-                                'cleared',
+                            const SizedBox(height: 8),
+                            Text(
+                              metadata['title'],
+                              style: const TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: statistic('${progress['stars']}', 'stars'),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: statistic(
+                                    '${progress['percent']}%',
+                                    'progress',
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: statistic(
+                                    '${progress['completed']}',
+                                    'cleared',
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: statistic(
+                                    '${progress['stars']}',
+                                    'stars',
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (wide)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: levelGrid()),
+                            const SizedBox(width: 16),
+                            Expanded(flex: 2, child: levelDetails()),
+                          ],
+                        )
+                      else ...[
+                        levelGrid(),
+                        const SizedBox(height: 16),
+                        levelDetails(),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (wide)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 3, child: levelGrid()),
-                        const SizedBox(width: 16),
-                        Expanded(flex: 2, child: levelDetails()),
-                      ],
-                    )
-                  else ...[
-                    levelGrid(),
-                    const SizedBox(height: 16),
-                    levelDetails(),
+                    ] else
+                      gameOverview(),
                   ],
-                ] else
-                  gameOverview(),
-              ],
+                ),
+              ),
             ),
           ),
-        ),
+          if (pendingStoryLevel != null) _storyOverlay(),
+        ],
       ),
     );
   }

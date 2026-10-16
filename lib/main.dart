@@ -13,6 +13,7 @@ import 'result.dart';
 import 'progress.dart';
 import 'play.dart';
 import 'levels.dart';
+import 'game6.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,6 +78,15 @@ class MyApp extends StatelessWidget {
             : const SettingsPage(),
         '/home': (context) =>
             AllUsers.activeUser == null ? const LoginPage() : const HomePage(),
+        // Development-only visual preview. It remains behind the normal login
+        // guard and is intentionally not linked from Level Selection.
+        '/game6-preview': (context) {
+          if (AllUsers.activeUser == null) return const LoginPage();
+          final requestedLevel = int.tryParse(
+            Uri.base.queryParameters['level'] ?? '1',
+          );
+          return Game6Page(selectedLevel: (requestedLevel ?? 1).clamp(1, 5));
+        },
       },
     );
   }

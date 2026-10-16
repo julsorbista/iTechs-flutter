@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'glob/game_data.dart';
 import 'glob/user.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,6 +15,7 @@ class LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
   String errorMessage = '';
   bool hidePassword = true;
+  bool isLoggingIn = false;
 
   List<Map<String, String>> terms = [
     {
@@ -101,7 +103,9 @@ class LoginPageState extends State<LoginPage> {
     );
   }
 
-  void loginAccount() {
+  Future<void> loginAccount() async {
+    if (isLoggingIn) return;
+
     String username = usernameController.text.trim();
     String password = passwordController.text;
 
@@ -115,12 +119,22 @@ class LoginPageState extends State<LoginPage> {
     for (int i = 0; i < AllUsers.userList.length; i++) {
       if (AllUsers.userList[i]['username'] == username &&
           AllUsers.matchesPassword(AllUsers.userList[i], password)) {
+        setState(() {
+          isLoggingIn = true;
+          errorMessage = '';
+        });
         AllUsers.activeUser = AllUsers.userList[i];
+
+        // A storage failure must not prevent a valid user from entering the app.
+        await GameData.loadProgress();
+        if (!mounted) return;
+
         Navigator.pushReplacementNamed(context, '/home');
         return;
       }
     }
     setState(() {
+      isLoggingIn = false;
       errorMessage = 'Incorrect username or password.';
     });
   }

@@ -70,6 +70,19 @@ flutter:
     - assets/images/boy-avatar-3.png
     - assets/images/boy-avatar-4.png
     - assets/audio/
+    - assets/game2/
+    - assets/game2/story/
+    - assets/game4/images/
+    - assets/game4/audio/
+    - assets/game4/story/
+    - assets/game4/guidelines/
+    - assets/game4/tutorial/
+    - assets/game6/backgrounds/
+    - assets/game6/story/
+    - assets/game6/tutorial/
+    - assets/game6/announcement/
+    - assets/game6/audio/
+    - assets/results/
     - assets/lessons/
     - assets/guidelines/
     - assets/guidelines/icon-move.png
