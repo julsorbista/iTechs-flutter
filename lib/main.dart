@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'login.dart';
 import 'home.dart';
 import 'glob/user.dart';
+import 'glob/game_data.dart';
+import 'games/game_content.dart';
 import 'settings.dart';
 import 'profile.dart';
 import 'leaderboard.dart';
@@ -17,6 +19,8 @@ import 'levels.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AllUsers.loadPasswords();
+  await GameData.load();
+  await GameContent.load();
   runApp(const MyApp());
 }
 

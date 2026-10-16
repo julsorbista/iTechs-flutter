@@ -57,13 +57,14 @@ class PlayPageState extends State<PlayPage> {
           padding: const EdgeInsets.only(top: 12),
           child: InkWell(
             key: ValueKey('game-$i'),
-            onTap: () {
+            onTap: () async {
               AppAudio.click();
               setState(() {
                 selectedGame = index;
               });
               GameData.activeGame = index;
-              Navigator.pushNamed(context, '/levels');
+              await Navigator.pushNamed(context, '/levels');
+              if (mounted) setState(() {});
             },
             child: Container(
               padding: const EdgeInsets.fromLTRB(14, 16, 14, 8),

@@ -1,5 +1,6 @@
 import 'user.dart';
 import 'lesson_data.dart';
+import 'game_data.dart';
 
 class ClassData {
   static int activeModule = 0;
@@ -172,6 +173,14 @@ class ClassData {
             row['completedActivities'] = row['completedActivities'] + 1;
           }
           if (record['passed']) {
+            row['completedActivities'] = row['completedActivities'] + 1;
+          }
+        }
+      }
+      for (final record in GameData.levelRecords) {
+        if (record['username'] == username && record['course'] == course) {
+          row['totalStars'] = row['totalStars'] + record['bestStars'];
+          if (record['status'] == 'Cleared') {
             row['completedActivities'] = row['completedActivities'] + 1;
           }
         }

@@ -6,6 +6,7 @@ import 'glob/user.dart';
 import 'glob/class_data.dart';
 import 'glob/audio.dart';
 import 'student_ui.dart';
+import 'games/gameplay_page.dart';
 
 class LevelsPage extends StatefulWidget {
   const LevelsPage({super.key});
@@ -20,6 +21,17 @@ class LevelsPageState extends State<LevelsPage> {
   bool showLevels = false;
   final pageController = ScrollController();
   final guidelinesController = ScrollController();
+
+  Future<void> startLevel() async {
+    AppAudio.click();
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => GameplayPage(game: game, number: selectedLevel),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
@@ -193,6 +205,8 @@ class LevelsPageState extends State<LevelsPage> {
                     const Expanded(
                       child: Text(
                         'LEVEL',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: 12,
@@ -256,7 +270,7 @@ class LevelsPageState extends State<LevelsPage> {
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(0, 0, 6, 8),
             crossAxisCount: MediaQuery.of(context).size.width >= 950 ? 3 : 2,
-            childAspectRatio: 1.02,
+            mainAxisExtent: 205,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: cards,
@@ -452,13 +466,24 @@ class LevelsPageState extends State<LevelsPage> {
           detailRow('Attempts', '${record['attempts']}'),
           detailRow('Best Stars', '${record['bestStars']}'),
           const SizedBox(height: 18),
-          studentButton('START LEVEL', null, const Color(0xFF172134)),
-          const SizedBox(height: 12),
-          const Text(
-            'Gameplay is not available yet.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: Color(0xFF654E50)),
+          studentButton(
+            'START LEVEL',
+            GameData.playable.contains(game) && record['status'] != 'Locked'
+                ? startLevel
+                : null,
+            const Color(0xFF172134),
           ),
+          if (!GameData.playable.contains(game) ||
+              record['status'] == 'Locked') ...[
+            const SizedBox(height: 12),
+            Text(
+              GameData.playable.contains(game)
+                  ? 'Earn at least 2 stars on the previous level to unlock.'
+                  : 'Gameplay is not available yet.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Color(0xFF654E50)),
+            ),
+          ],
         ],
       ),
     );

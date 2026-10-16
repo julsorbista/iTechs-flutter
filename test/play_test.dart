@@ -9,15 +9,17 @@ import 'package:itechs/glob/game_data.dart';
 import 'package:itechs/glob/user.dart';
 import 'package:itechs/play.dart';
 import 'package:itechs/levels.dart';
+import 'package:itechs/games/game_content.dart';
 
 import 'audio_mock.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
     mockAudio();
     AllUsers.activeUser = AllUsers.userList[0];
     AllUsers.sfxVolume = 0;
     GameData.levelRecords = [];
+    await GameContent.load();
   });
   tearDown(() {
     AllUsers.sfxVolume = 55;
@@ -31,7 +33,7 @@ void main() {
       5,
       5,
     ]);
-    expect(GameCatalog.games[4]['title'], 'Code Snowman');
+    expect(GameCatalog.games[4]['title'], 'Code Robot');
     GameData.level(0, 1)['bestStars'] = 3;
     AllUsers.activeUser!['courseCode'] = 'JAVA2026';
     expect(GameData.summary(0)['stars'], 0);
