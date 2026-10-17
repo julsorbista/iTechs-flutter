@@ -23,10 +23,12 @@ class AppAudio {
     if (AllUsers.sfxVolume == 0) return;
     sound.positionUpdater = null;
     await sound.stop();
-    await sound.play(
-      AssetSource('audio/student-click.mp3'),
-      volume: 0.45 * AllUsers.sfxVolume / 100,
-    );
+    await sound
+        .play(
+          AssetSource('audio/student-click.mp3'),
+          volume: 0.45 * AllUsers.sfxVolume / 100,
+        )
+        .catchError((Object _) {});
   }
 
   static void stop() {

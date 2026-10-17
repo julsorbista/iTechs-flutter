@@ -1,0 +1,28 @@
+html,body,#root { margin:0; width:100%; height:100%; overflow:hidden; }
+/* All game layouts and touch controls come from the supplied mobile ZIP. */
+
+/* One scrolling surface for the memory game. Nested viewport-sized shells
+   otherwise trap swipes/wheel events and clip the Session/Back controls. */
+#root .student-game-overlay-game-three-scroll {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+#root .student-game-overlay-game-three-scroll .student-shell-overlay,
+#root .student-game-overlay-game-three-scroll .student-shell-main,
+#root .student-game-overlay-game-three-scroll .student-game-three-overlay-layout,
+#root .student-game-overlay-game-three-scroll .student-game-three-frame-panel,
+#root .student-game-overlay-game-three-scroll .student-game-frame-wrap,
+#root .student-game-overlay-game-three-scroll .student-game-frame-shell,
+#root .student-game-overlay-game-three-scroll .game-three-shell,
+#root .student-game-overlay-game-three-scroll .game-three-layout,
+#root .student-game-overlay-game-three-scroll .game-three-side-panel {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}

@@ -12,6 +12,7 @@ import 'student_story_frame.dart';
 import 'game2.dart';
 import 'game4.dart';
 import 'game6.dart';
+import 'games/gameplay_page.dart';
 
 class LevelsPage extends StatefulWidget {
   const LevelsPage({super.key});
@@ -28,6 +29,17 @@ class LevelsPageState extends State<LevelsPage> {
   int pendingStoryPage = 0;
   final pageController = ScrollController();
   final guidelinesController = ScrollController();
+
+  Future<void> startLevel() async {
+    AppAudio.click();
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => GameplayPage(game: game, number: selectedLevel),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
@@ -207,6 +219,8 @@ class LevelsPageState extends State<LevelsPage> {
                     const Expanded(
                       child: Text(
                         'LEVEL',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: 12,
@@ -501,6 +515,8 @@ class LevelsPageState extends State<LevelsPage> {
                     if (!mounted) return;
                     setState(() {});
                   }
+                : !locked && GameData.playable.contains(game)
+                ? startLevel
                 : null,
             const Color(0xFF172134),
           ),
@@ -512,10 +528,26 @@ class LevelsPageState extends State<LevelsPage> {
                 ? 'Game 4 — Catch The Code is ready to play.'
                 : metadata['gameType'] == 'GAME_SIX'
                 ? 'Game 6 — Syntax Rain Typing is ready to play.'
+                : GameData.playable.contains(game)
+                ? 'Ready to play.'
                 : 'Gameplay is not available yet.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Color(0xFF654E50)),
           ),
+          if ((!GameData.playable.contains(game) &&
+                  !{1, 3, 5}.contains(game)) ||
+              record['status'] == 'Locked') ...[
+            const SizedBox(height: 12),
+            Text(
+              GameData.playable.contains(game)
+                  ? 'Earn at least 2 stars on the previous level to unlock.'
+                  : GameData.playable.contains(game)
+                  ? 'Ready to play.'
+                  : 'Gameplay is not available yet.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Color(0xFF654E50)),
+            ),
+          ],
         ],
       ),
     );
