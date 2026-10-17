@@ -1,0 +1,122 @@
+/* Match the reference: a centered 16:9 stage and a separate control strip. */
+#root .student-game-overlay-game-one,
+#root .student-game-overlay-game-one .student-shell-overlay,
+#root .student-game-overlay-game-one .student-shell-main,
+#root .student-game-overlay-game-one .student-game-one-play-layout,
+#root .student-game-overlay-game-one .student-game-one-panel,
+#root .student-game-overlay-game-one .student-game-frame-wrap,
+#root .student-game-overlay-game-one .student-game-frame-shell {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  background: #0e1925 !important;
+  box-sizing: border-box !important;
+}
+#root .student-game-overlay-game-one .game-one-frame-shell {
+  width: 100% !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) 40px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch !important;
+  justify-items: center;
+  align-items: start !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-sizing: border-box !important;
+  align-content: start !important;
+}
+#root .student-game-overlay-game-one .game-one-canvas-viewport {
+  grid-row: 1;
+  position: relative !important;
+  flex: none !important;
+  width: min(100%, calc((100dvh - 40px) * 16 / 9)) !important;
+  height: auto !important;
+  max-height: 100% !important;
+  aspect-ratio: 16 / 9 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: block !important;
+  overflow: hidden;
+}
+/* Do not flex-center Phaser's DOM layer independently of its canvas. */
+#root .student-game-overlay-game-one .game-one-canvas-viewport > div {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+#root .student-game-overlay-game-one .game-one-canvas-viewport canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  object-fit: contain;
+}
+#root .student-game-overlay-game-one .game-one-mobile-controls {
+  grid-row: 2;
+  display: flex !important;
+  position: relative !important;
+  inset: auto !important;
+  width: min(100%, calc((100dvh - 40px) * 16 / 9)) !important;
+  height: 40px;
+  padding: 2px 8px !important;
+  box-sizing: border-box;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-direction: row !important;
+  border: 0 !important;
+  background: #0e1925 !important;
+  pointer-events: none;
+}
+#root .student-game-overlay-game-one .game-one-mobile-direction-controls,
+#root .student-game-overlay-game-one .game-one-mobile-actions {
+  display: flex !important;
+  gap: clamp(5px, 1vw, 12px) !important;
+}
+#root .student-game-overlay-game-one .game-one-mobile-control-button {
+  width: auto !important;
+  min-width: 42px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border: 2px solid #a7b0bc !important;
+  border-radius: 6px !important;
+  color: #f5f7fa;
+  background: #0e1925 !important;
+  box-shadow: none !important;
+  font: 700 12px/1 Arial, sans-serif !important;
+  pointer-events: auto;
+  touch-action: none;
+}
+#root .student-game-overlay-game-one .game-one-mobile-control-button:active {
+  background: #24445a !important;
+}
+#root .student-game-overlay-game-one .game-one-mobile-hud-menu {
+  display: grid !important;
+  position: absolute;
+  top: 2.6%;
+  right: 1.6%;
+  z-index: 100;
+  width: 9.1%;
+  min-width: 42px;
+  min-height: 24px;
+  padding: 0;
+  place-items: center;
+  color: #cffafe;
+  border: 2px solid #79b9c9;
+  border-radius: 0;
+  background: #19323e;
+  font: 700 10px/1 Arial, sans-serif;
+  pointer-events: auto !important;
+}

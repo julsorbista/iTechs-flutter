@@ -5,10 +5,13 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import 'glob/game_data.dart';
+import 'widgets/game_entry.dart';
+import 'widgets/game_completion_flow.dart';
 import 'widgets/illustrated_results_overlay.dart';
 
 class Game2Page extends StatefulWidget {
-  const Game2Page({super.key, this.selectedLevel});
+  const Game2Page({super.key, this.selectedLevel, this.firstPlay = false});
+  final bool firstPlay;
 
   final int? selectedLevel;
 
@@ -18,6 +21,7 @@ class Game2Page extends StatefulWidget {
 
 class _Game2PageState extends State<Game2Page> {
   int score = 0;
+  bool _introCompleted = false;
   int lives = 3;
   int combo = 0;
   int completedOutputs = 0;
@@ -1119,7 +1123,11 @@ class _Game2PageState extends State<Game2Page> {
     _flashMs = 0;
     _shakeMs = 0;
     _initializeChallengeCards();
-    _startAnnouncementSequence(advanceChallenge: false);
+    if (widget.firstPlay && _currentLevel == 1 && !_introCompleted) {
+      _guidelinesVisible = true;
+    } else {
+      _startAnnouncementSequence(advanceChallenge: false);
+    }
   }
 
   void _startAnnouncementSequence({required bool advanceChallenge}) {
@@ -1625,6 +1633,10 @@ class _Game2PageState extends State<Game2Page> {
   }
 
   void _closeGuidelines() {
+    if (widget.firstPlay && !_introCompleted) {
+      _openTutorial();
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _guidelinesVisible = false;
@@ -1654,6 +1666,13 @@ class _Game2PageState extends State<Game2Page> {
   }
 
   void _closeTutorial() {
+    if (widget.firstPlay && !_introCompleted) {
+      _introCompleted = true;
+      if (_tutorialPage == _tutorialSteps.length - 1) {
+        unawaited(GameIntro.complete(1));
+      }
+      _startAnnouncementSequence(advanceChallenge: false);
+    }
     _tutorialTimer?.cancel();
     _tutorialTimer = null;
     if (!mounted) return;
@@ -2001,15 +2020,20 @@ class _Game2PageState extends State<Game2Page> {
         _currentLevel >= 5) {
       return;
     }
-    setState(() {
-      _activeLevel += 1;
-      _resetGameState();
-    });
+    final next = _currentLevel + 1;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => GameEntry(
+          game: 1,
+          level: next,
+          builder: (_) => Game2Page(selectedLevel: next),
+        ),
+      ),
+    );
   }
 
   Widget resultOverlay() {
     final successful = _levelCleared;
-    final isFinal = successful && _currentLevel >= 5;
     final minutes = _elapsedSeconds ~/ 60;
     final seconds = _elapsedSeconds % 60;
     final metrics = <ResultMetric>[
@@ -2045,21 +2069,23 @@ class _Game2PageState extends State<Game2Page> {
         !_resultSavePending &&
         _resultSaveSucceeded == true;
     return Positioned.fill(
-      child: IllustratedResultsOverlay(
-        background: isFinal
-            ? 'assets/results/complete-level.png'
-            : 'assets/results/results-frame.png',
-        metrics: metrics,
-        canAdvance:
-            successful &&
-            _currentLevel < 5 &&
-            !_resultSavePending &&
-            _resultSaveSucceeded == true,
-        saving: _resultSavePending,
-        onNext: _nextLevel,
-        onRetry: _retryLevel,
-        onBack: () => Navigator.pop(context),
-        retryLabel: successfulLabel(canAdvance),
+      child: GameCompletionFlow(
+        key: ValueKey(_runId),
+        successful: successful,
+        child: IllustratedResultsOverlay(
+          background: 'assets/results/results-frame.png',
+          metrics: metrics,
+          canAdvance:
+              successful &&
+              _currentLevel < 5 &&
+              !_resultSavePending &&
+              _resultSaveSucceeded == true,
+          saving: _resultSavePending,
+          onNext: _nextLevel,
+          onRetry: _retryLevel,
+          onBack: () => Navigator.pop(context),
+          retryLabel: successfulLabel(canAdvance),
+        ),
       ),
     );
   }

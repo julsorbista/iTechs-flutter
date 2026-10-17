@@ -8,6 +8,9 @@ import 'widgets/illustrated_results_overlay.dart';
 
 import 'glob/coin_storage.dart';
 import 'glob/game_data.dart';
+import 'widgets/game_entry.dart';
+import 'widgets/game6_announcement.dart';
+import 'widgets/game_completion_flow.dart';
 import 'glob/user.dart';
 import 'student_story_frame.dart';
 
@@ -21,11 +24,13 @@ class Game6Page extends StatelessWidget {
     this.selectedLevel = 1,
     this.initialCoins = 0,
     this.isTutorialLevel = false,
+    this.firstPlay = false,
   });
 
   final int selectedLevel;
   final int initialCoins;
   final bool isTutorialLevel;
+  final bool firstPlay;
 
   static const _levels = <_Game6LevelConfig>[
     _Game6LevelConfig(
@@ -93,6 +98,7 @@ class Game6Page extends StatelessWidget {
                 config: _config,
                 initialCoins: initialCoins,
                 isTutorialLevel: isTutorialLevel,
+                firstPlay: firstPlay,
                 compact: compact,
                 playfieldHeight: playfieldHeight,
                 theme: theme,
@@ -637,9 +643,11 @@ class _Game6Gameplay extends StatefulWidget {
     required this.playfieldHeight,
     required this.theme,
     required this.isTutorialLevel,
+    required this.firstPlay,
   });
 
   final _Game6LevelConfig config;
+  final bool firstPlay;
   final int initialCoins;
   final bool compact;
   final double playfieldHeight;
@@ -799,24 +807,14 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
     _startRound();
     if (widget.isTutorialLevel) {
       _instructionMode = 'coach';
-    } else if (_shouldShowFirstPlayStory) {
-      _instructionMode = 'story';
-      _introSequence = true;
-    } else if (_config.level == 1) {
+    } else if (widget.firstPlay && _config.level == 1) {
       _instructionMode = 'guide';
+      _introSequence = true;
     } else {
       Future<void>.microtask(() {
         if (mounted) _beginAnnouncement();
       });
     }
-  }
-
-  bool get _shouldShowFirstPlayStory {
-    if (_config.level != 1) return false;
-    final user = AllUsers.activeUser;
-    if (user == null) return true;
-    final record = GameData.level(5, 1);
-    return (record['attempts'] as int? ?? 0) == 0;
   }
 
   Future<void> _loadCoins() async {
@@ -1126,6 +1124,12 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
   }
 
   void _beginAnnouncement() {
+    if (_instructionMode == 'interactive' &&
+        _introSequence &&
+        _tutorialStep == 5) {
+      unawaited(GameIntro.complete(5));
+      _introSequence = false;
+    }
     _pauseGameplay();
     _stopTutorialAnimation();
     _announcementTimer?.cancel();
@@ -1236,6 +1240,12 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
   }
 
   void _closeInstruction({bool startGameplay = true}) {
+    if (_instructionMode == 'interactive' &&
+        _introSequence &&
+        _tutorialStep == 5) {
+      unawaited(GameIntro.complete(5));
+      _introSequence = false;
+    }
     _announcementTimer?.cancel();
     _stopTutorialAnimation();
     _removeInstructionOverlay();
@@ -2422,7 +2432,6 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
 
   Widget _finishPanel() {
     final success = _cleared >= _config.targetWords;
-    final isFinal = success && _config.level >= 5;
     final resultMetrics = <ResultMetric>[
       ResultMetric(
         label: 'Stars',
@@ -2451,18 +2460,19 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
         icon: Icons.emoji_events,
       ),
     ];
-    return IllustratedResultsOverlay(
-      background: isFinal
-          ? 'assets/results/complete-level.png'
-          : 'assets/results/results-frame.png',
-      metrics: resultMetrics,
-      canAdvance: _nextLevelAvailable && !_resultSaving,
-      saving: _resultSaving,
-      onNext: _openNextLevel,
-      onRetry: _retry,
-      onBack: () => Navigator.maybePop(context),
-      retryLabel: success ? 'Play Again' : 'Retry Level',
-      forceHorizontalFooter: true,
+    return GameCompletionFlow(
+      successful: success,
+      child: IllustratedResultsOverlay(
+        background: 'assets/results/results-frame.png',
+        metrics: resultMetrics,
+        canAdvance: _nextLevelAvailable && !_resultSaving,
+        saving: _resultSaving,
+        onNext: _openNextLevel,
+        onRetry: _retry,
+        onBack: () => Navigator.maybePop(context),
+        retryLabel: success ? 'Play Again' : 'Retry Level',
+        forceHorizontalFooter: true,
+      ),
     );
   }
 
@@ -3746,92 +3756,13 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
       5 => 'ODD PAIR',
       _ => 'SPEED-UP WAVE',
     };
-    return _overlayFrame(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600, minHeight: 330),
-        padding: const EdgeInsets.all(30),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7E5BA),
-          border: Border.all(color: const Color(0xFF63391F), width: 4),
-          boxShadow: const [
-            BoxShadow(color: Colors.black54, offset: Offset(8, 8)),
-          ],
-          image: const DecorationImage(
-            image: AssetImage(
-              'assets/game6/announcement/announcement-board.png',
-            ),
-            fit: BoxFit.cover,
-            opacity: .25,
-          ),
-        ),
-        child: Center(
-          child: countdown == null
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'CHALLENGE ANNOUNCEMENT',
-                      style: _text(
-                        const Color(0xFF63391F),
-                        13,
-                        weight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'READY?',
-                      style: _text(
-                        const Color(0xFF63391F),
-                        32,
-                        weight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'LEVEL ${_config.level}: $challenge ROUND',
-                      textAlign: TextAlign.center,
-                      style: _text(
-                        const Color(0xFF63391F),
-                        18,
-                        weight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _config.objective,
-                      textAlign: TextAlign.center,
-                      style: _text(
-                        const Color(0xFF63391F),
-                        14,
-                        weight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'GET READY!',
-                      style: _text(
-                        const Color(0xFF63391F),
-                        22,
-                        weight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '$countdown',
-                      style: _text(
-                        const Color(0xFF63391F),
-                        64,
-                        weight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
+    return Game6Announcement(
+      level: _config.level,
+      challenge: challenge,
+      objective: _config.level == 1
+          ? 'Type each Java term before it reaches the bottom. The falling speed increases as you progress.'
+          : _config.objective,
+      countdown: countdown,
     );
   }
 
@@ -3870,8 +3801,12 @@ class _Game6GameplayState extends State<_Game6Gameplay> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            Game6Page(selectedLevel: _config.level + 1, initialCoins: _coins),
+        builder: (_) => GameEntry(
+          game: 5,
+          level: _config.level + 1,
+          builder: (_) =>
+              Game6Page(selectedLevel: _config.level + 1, initialCoins: _coins),
+        ),
       ),
     );
   }

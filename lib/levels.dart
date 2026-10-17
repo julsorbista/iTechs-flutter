@@ -12,6 +12,7 @@ import 'student_story_frame.dart';
 import 'game2.dart';
 import 'game4.dart';
 import 'game6.dart';
+import 'widgets/game_entry.dart';
 import 'games/gameplay_page.dart';
 
 class LevelsPage extends StatefulWidget {
@@ -570,26 +571,43 @@ class LevelsPageState extends State<LevelsPage> {
     if (gameType == 'GAME_TWO') {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => Game2Page(selectedLevel: level)),
+        MaterialPageRoute(
+          builder: (_) => GameEntry(
+            game: 1,
+            level: level,
+            builder: (firstPlay) =>
+                Game2Page(selectedLevel: level, firstPlay: firstPlay),
+          ),
+        ),
       );
       return;
     }
     if (gameType == 'GAME_SIX') {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => Game6Page(selectedLevel: level)),
+        MaterialPageRoute(
+          builder: (_) => GameEntry(
+            game: 5,
+            level: level,
+            builder: (firstPlay) =>
+                Game6Page(selectedLevel: level, firstPlay: firstPlay),
+          ),
+        ),
       );
       return;
     }
-    final firstPlay = game4FirstPlay ?? false;
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => Game4Page(
-          selectedLevel: level,
-          suppressIntroTutorial: level == 1,
-          continueToTutorialAfterGuide: firstPlay,
-          startWithGuide: level == 1 && firstPlay,
+        builder: (_) => GameEntry(
+          game: 3,
+          level: level,
+          builder: (firstPlay) => Game4Page(
+            selectedLevel: level,
+            suppressIntroTutorial: level == 1,
+            continueToTutorialAfterGuide: firstPlay,
+            startWithGuide: level == 1 && firstPlay,
+          ),
         ),
       ),
     );

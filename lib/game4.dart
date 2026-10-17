@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 
 import 'glob/coin_storage.dart';
 import 'glob/game_data.dart';
+import 'widgets/game_entry.dart';
+import 'widgets/game_completion_flow.dart';
 import 'glob/user.dart';
 
 class Game4Page extends StatefulWidget {
@@ -906,6 +908,11 @@ class _Game4PageState extends State<Game4Page>
   }
 
   void _closeInstructionOverlay() {
+    if (_instructionOverlay == 'tutorial' &&
+        _levelNumber == 1 &&
+        _tutorialStepIndex == _tutorialStepCount - 1) {
+      unawaited(GameIntro.complete(3));
+    }
     _tutorialTimer?.cancel();
     _tutorialTimer = null;
     _tutorialTargetRect = null;
@@ -2336,10 +2343,14 @@ class _Game4PageState extends State<Game4Page>
     final nextLevel = _levelNumber + 1;
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => Game4Page(
-          selectedLevel: nextLevel,
-          suppressIntroTutorial: true,
-          continueToTutorialAfterGuide: false,
+        builder: (_) => GameEntry(
+          game: 3,
+          level: nextLevel,
+          builder: (_) => Game4Page(
+            selectedLevel: nextLevel,
+            suppressIntroTutorial: true,
+            continueToTutorialAfterGuide: false,
+          ),
         ),
       ),
     );
@@ -3586,7 +3597,6 @@ class _Game4PageState extends State<Game4Page>
 
   Widget _buildResultOverlay() {
     final passed = _runPassed;
-    final isFinal = passed && _levelNumber >= 5;
     final elapsed = DateTime.now().difference(_runStartedAt).inSeconds;
     final resultMetrics = <ResultMetric>[
       ResultMetric(
@@ -3616,17 +3626,19 @@ class _Game4PageState extends State<Game4Page>
       ),
     ];
     return Positioned.fill(
-      child: IllustratedResultsOverlay(
-        background: isFinal
-            ? 'assets/results/complete-level.png'
-            : 'assets/results/results-frame.png',
-        metrics: resultMetrics,
-        canAdvance: _nextLevelAvailable && !_resultSavePending,
-        saving: _resultSavePending,
-        onNext: _goToNextLevel,
-        onRetry: _retryRun,
-        onBack: _openLevelsFromResult,
-        retryLabel: passed ? 'Play Again' : 'Retry Level',
+      child: GameCompletionFlow(
+        key: ValueKey(_runStartedAt),
+        successful: passed,
+        child: IllustratedResultsOverlay(
+          background: 'assets/results/results-frame.png',
+          metrics: resultMetrics,
+          canAdvance: _nextLevelAvailable && !_resultSavePending,
+          saving: _resultSavePending,
+          onNext: _goToNextLevel,
+          onRetry: _retryRun,
+          onBack: _openLevelsFromResult,
+          retryLabel: passed ? 'Play Again' : 'Retry Level',
+        ),
       ),
     );
   }
